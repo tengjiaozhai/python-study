@@ -5,11 +5,12 @@ class Student(object):
         self.name = name
         self.score = score
     def get_grade(self):
-        if self.score >= 60:
-            return 'B'
         if self.score >= 80:
             return 'A'
-        return 'C'
+        elif self.score >= 60:
+            return 'B'
+        else:
+            return 'C'
 
 class TestStudent(unittest.TestCase):
 
