@@ -1,0 +1,11 @@
+# 忽略 xml 后缀的文件
+*.xml
+
+# 忽略 iml 后缀的文件
+*.iml
+
+# 忽略 .venv 目录
+.venv/
+
+# IDE 配置文件
+.idea/
