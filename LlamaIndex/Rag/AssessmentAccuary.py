@@ -167,7 +167,20 @@ metrics_summary = pd.DataFrame({
 
 print(metrics_summary.to_string(index=False))
 
-# 第9步：给出综合评价和建议
+# 第9步：答案对比表格
+print("\n" + "=" * 60)
+print("� 答案对比分析):")
+print("=" * 60)
+
+comparison_df = pd.DataFrame({
+    '类型': ['标准答案', '系统回答'],
+    '内容': [ground_truth, str(response)],
+    '长度': [len(ground_truth), len(str(response))],
+    '匹配度': ['-', f'{answer_correctness_score * 100:.2f}%']
+})
+print(comparison_df.to_string(index=False))
+
+# 第10步：给出综合评价和建议
 print("\n" + "=" * 60)
 print("💡 综合评价:")
 print("=" * 60)
@@ -175,17 +188,37 @@ print("=" * 60)
 if answer_correctness_score >= 0.9:
     evaluation = "优秀 ⭐⭐⭐⭐⭐"
     suggestion = "系统回答非常准确，与标准答案高度一致。"
+    emoji = "🎉"
 elif answer_correctness_score >= 0.7:
     evaluation = "良好 ⭐⭐⭐⭐"
     suggestion = "系统回答基本准确，但可能在细节上与标准答案有些差异。"
+    emoji = "👍"
 elif answer_correctness_score >= 0.5:
     evaluation = "中等 ⭐⭐⭐"
     suggestion = "系统回答部分正确，建议优化检索策略或增加相关文档。"
+    emoji = "⚠️"
 else:
     evaluation = "需要改进 ⭐⭐"
     suggestion = "系统回答与标准答案差异较大，需要检查文档质量和检索算法。"
+    emoji = "❌"
 
-print(f"评级: {evaluation}")
-print(f"建议: {suggestion}")
-print(f"\n准确率: {answer_correctness_score * 100:.2f}%")
+print(f"{emoji} 评级: {evaluation}")
+print(f"📝 建议: {suggestion}")
+print(f"📊 准确率: {answer_correctness_score * 100:.2f}%")
+
+# 第11步：检索质量分析
+print("\n" + "=" * 60)
+print("📚 检索质量分析:")
+print("=" * 60)
+print(f"检索到的文档数量: {len(response.source_nodes)}")
+print(f"使用的文档数量: {len([node for node in response.source_nodes])}")
+
+# 显示每个检索文档的相关性（如果有分数）
+if hasattr(response.source_nodes[0], 'score') and response.source_nodes[0].score is not None:
+    print("\n各文档相关性得分:")
+    for i, node in enumerate(response.source_nodes, 1):
+        print(f"  文档 {i}: {node.score:.4f}")
+else:
+    print("(未提供文档相关性得分)")
+
 print("=" * 60)
