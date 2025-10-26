@@ -57,13 +57,16 @@ def evaluate_result(question, response, ground_truth):
     dataset = Dataset.from_dict(data_samples)
     
     # 输出评估数据集表格
-    print("\n评估数据集 (user_input):")
-    print("-" * 40)
+    print("\n📋 评估数据集:")
+    print("-" * 60)
     # 使用pandas DataFrame格式化输出
     import pandas as pd
-    df = pd.DataFrame(data_samples)
-    # 对contexts列进行处理，只显示前50个字符
-    df["contexts"] = df["contexts"].apply(lambda x: str(x)[:50] + "...")
+    df = pd.DataFrame({
+        '问题': data_samples['question'],
+        '系统回答': data_samples['answer'],
+        '标准答案': data_samples['ground_truth'],
+        '检索文档数': [len(data_samples['contexts'][0])]
+    })
     print(df.to_string(index=False))
 
     # 第4步：使用 Ragas 评估
@@ -109,24 +112,80 @@ for i, source_node in enumerate(response.source_nodes, 1):
 
 # 第6步：执行评估
 print(f"\n评估指标:")
-print("-" * 40)
+print("=" * 60)
 ground_truth = "王芳是教研部的教研专员"
 result = evaluate_result(question, response, ground_truth)
-print(result)
 
-# 第7步：提取并显示答案正确性得分
+# 第7步：美化输出评估结果表格
+print("\n📊 详细评估结果表格:")
+print("=" * 60)
+
+# 设置 pandas 显示选项
+import pandas as pd
+pd.set_option('display.max_columns', None)
+pd.set_option('display.width', None)
+pd.set_option('display.max_colwidth', 50)
+
+# 创建一个更易读的结果表格
+result_display = result.copy()
+
+# 如果有 contexts 列，简化显示
+if 'retrieved_contexts' in result_display.columns:
+    result_display['retrieved_contexts'] = result_display['retrieved_contexts'].apply(
+        lambda x: f"[{len(x)} 个文档片段]" if isinstance(x, list) else str(x)[:30] + "..."
+    )
+
+# 简化 response 和 reference 列的显示
+if 'response' in result_display.columns:
+    result_display['response'] = result_display['response'].apply(
+        lambda x: str(x)[:40] + "..." if len(str(x)) > 40 else str(x)
+    )
+if 'reference' in result_display.columns:
+    result_display['reference'] = result_display['reference'].apply(
+        lambda x: str(x)[:40] + "..." if len(str(x)) > 40 else str(x)
+    )
+
+print(result_display.to_string(index=False))
+
+# 第8步：提取并显示各项指标
+print("\n" + "=" * 60)
+print("📈 评估指标详情:")
+print("=" * 60)
+
 answer_correctness_score = result["answer_correctness"].values[0]
-print(f"\n答案正确性得分: {answer_correctness_score:.4f}")
 
-# 第8步：给出综合评价
+# 创建指标汇总表
+metrics_summary = pd.DataFrame({
+    '指标名称': ['答案正确性 (Answer Correctness)'],
+    '得分': [f'{answer_correctness_score:.4f}'],
+    '百分比': [f'{answer_correctness_score * 100:.2f}%'],
+    '评级': ['优秀' if answer_correctness_score >= 0.9 
+             else '良好' if answer_correctness_score >= 0.7 
+             else '中等' if answer_correctness_score >= 0.5 
+             else '需要改进']
+})
+
+print(metrics_summary.to_string(index=False))
+
+# 第9步：给出综合评价和建议
+print("\n" + "=" * 60)
+print("💡 综合评价:")
+print("=" * 60)
+
 if answer_correctness_score >= 0.9:
-    evaluation = "优秀"
+    evaluation = "优秀 ⭐⭐⭐⭐⭐"
+    suggestion = "系统回答非常准确，与标准答案高度一致。"
 elif answer_correctness_score >= 0.7:
-    evaluation = "良好"
+    evaluation = "良好 ⭐⭐⭐⭐"
+    suggestion = "系统回答基本准确，但可能在细节上与标准答案有些差异。"
 elif answer_correctness_score >= 0.5:
-    evaluation = "中等"
+    evaluation = "中等 ⭐⭐⭐"
+    suggestion = "系统回答部分正确，建议优化检索策略或增加相关文档。"
 else:
-    evaluation = "需要改进"
+    evaluation = "需要改进 ⭐⭐"
+    suggestion = "系统回答与标准答案差异较大，需要检查文档质量和检索算法。"
 
-print(f"综合评价: {evaluation}")
+print(f"评级: {evaluation}")
+print(f"建议: {suggestion}")
+print(f"\n准确率: {answer_correctness_score * 100:.2f}%")
 print("=" * 60)
