@@ -12,7 +12,12 @@ from ragas import evaluate
 from ragas.metrics import answer_correctness
 from Rag.Utils import get_ragas_models, llama_llm, llama_embed_model
 from datasets import Dataset
-from llama_index.core import Settings, SimpleDirectoryReader, VectorStoreIndex
+from llama_index.core import Settings, VectorStoreIndex
+try:
+    from llama_index.core.readers import SimpleDirectoryReader
+except ImportError:
+    # 如果导入失败，尝试从旧版本导入
+    from llama_index import SimpleDirectoryReader
 
 # 配置 LlamaIndex 全局设置
 Settings.llm = llama_llm
